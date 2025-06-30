@@ -5,6 +5,8 @@ import ru.vladislav117.fsmanagement.FSObject;
 import ru.vladislav117.fsmanagement.file.File;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.function.Predicate;
 
 /**
  * Директория.
@@ -75,11 +77,7 @@ public class Directory extends FSObject {
      * @return Директория другого типа.
      */
     public <DirectoryClass extends Directory> DirectoryClass as(Class<DirectoryClass> directoryType) {
-        try {
-            return directoryType.getConstructor(FSObject.class).newInstance(this);
-        } catch (Exception exception) {
-            throw new RuntimeException(exception);
-        }
+        return asDirectory(directoryType);
     }
 
     /**
@@ -144,5 +142,213 @@ public class Directory extends FSObject {
         } catch (IOException ignored) {
         }
         return this;
+    }
+
+    /**
+     * Получение объектов файловой системы в директории, исключая поддиректории.
+     *
+     * @param root Корень, в котором будет произведён поиск
+     * @return Найденные объекты файловой системы.
+     */
+    protected ArrayList<FSObject> entryFSObjectsAtTopLevel(FSObject root) {
+        java.io.File[] files = root.getLocation().listFiles();
+        if (files == null) return new ArrayList<>();
+        ArrayList<FSObject> directoryEntries = new ArrayList<>();
+        for (java.io.File file : files)
+            directoryEntries.add(new FSObject(file) {
+                @Override
+                public FSObject delete() {
+                    return this;
+                }
+            });
+        return directoryEntries;
+    }
+
+    /**
+     * Получение объектов файловой системы внутри директории, исключая поиск в поддиректориях.
+     *
+     * @param filter Фильтр объектов файловой системы
+     * @return Найденные объекты файловой системы.
+     */
+    public ArrayList<FSObject> getEntryFSObjectsAtTopLevel(Predicate<FSObject> filter) {
+        ArrayList<FSObject> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsAtTopLevel(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (filter.test(fsObject)) fsObjects.add(fsObject);
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение объектов файловой системы внутри директории, исключая поиск в поддиректориях.
+     *
+     * @return Найденные объекты файловой системы.
+     */
+    public ArrayList<FSObject> getEntryFSObjectsAtTopLevel() {
+        return entryFSObjectsAtTopLevel(this);
+    }
+
+    /**
+     * Получение файлов внутри директории, исключая поиск в поддиректориях.
+     *
+     * @param filter Фильтр файлов
+     * @return Найденные файлы.
+     */
+    public ArrayList<File> getEntryFilesAtTopLevel(Predicate<File> filter) {
+        ArrayList<File> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsAtTopLevel(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (fsObject.isFile() && filter.test(fsObject.asFile())) fsObjects.add(fsObject.asFile());
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение файлов внутри директории, исключая поиск в поддиректориях.
+     *
+     * @return Найденные файлы.
+     */
+    public ArrayList<File> getEntryFilesAtTopLevel() {
+        ArrayList<File> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsAtTopLevel(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (fsObject.isFile()) fsObjects.add(fsObject.asFile());
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение директорий внутри директории, исключая поиск в поддиректориях.
+     *
+     * @param filter Фильтр директорий
+     * @return Найденные директории.
+     */
+    public ArrayList<Directory> getEntryDirectoriesAtTopLevel(Predicate<Directory> filter) {
+        ArrayList<Directory> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsAtTopLevel(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (fsObject.isDirectory() && filter.test(fsObject.asDirectory())) fsObjects.add(fsObject.asDirectory());
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение директорий внутри директории, исключая поиск в поддиректориях.
+     *
+     * @return Найденные директории.
+     */
+    public ArrayList<Directory> getEntryDirectoriesAtTopLevel() {
+        ArrayList<Directory> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsAtTopLevel(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (fsObject.isDirectory()) fsObjects.add(fsObject.asDirectory());
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение объектов файловой системы в директории, включая все поддиректории.
+     * Директории не будут добавлены в результаты поиска.
+     *
+     * @param root Корень, в котором будет произведён поиск
+     * @return Найденные объекты файловой системы.
+     */
+    static ArrayList<FSObject> entryFSObjectsRecursively(FSObject root) {
+        java.io.File[] files = root.getLocation().listFiles();
+        if (files == null) return new ArrayList<>();
+        ArrayList<FSObject> fsObjects = new ArrayList<>();
+        for (java.io.File file : files) {
+            FSObject fsObject = new FSObject(file) {
+                @Override
+                public FSObject delete() {
+                    return null;
+                }
+            };
+            fsObjects.add(fsObject);
+            if (fsObject.isDirectory()) fsObjects.addAll(entryFSObjectsRecursively(fsObject));
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение объектов файловой системы внутри директории, включая поиск в поддиректориях.
+     *
+     * @param filter Фильтр объектов файловой системы
+     * @return Найденные объекты файловой системы.
+     */
+    public ArrayList<FSObject> getEntryFSObjects(Predicate<FSObject> filter) {
+        ArrayList<FSObject> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsRecursively(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (filter.test(fsObject)) fsObjects.add(fsObject);
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение объектов файловой системы внутри директории, включая поиск в поддиректориях.
+     *
+     * @return Найденные объекты файловой системы.
+     */
+    public ArrayList<FSObject> getEntryFSObjects() {
+        return entryFSObjectsRecursively(this);
+    }
+
+    /**
+     * Получение файлов внутри директории, включая поиск в поддиректориях.
+     *
+     * @param filter Фильтр файлов
+     * @return Найденные файлы.
+     */
+    public ArrayList<File> getEntryFiles(Predicate<File> filter) {
+        ArrayList<File> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsRecursively(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (fsObject.isFile() && filter.test(fsObject.asFile())) fsObjects.add(fsObject.asFile());
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение файлов внутри директории, включая поиск в поддиректориях.
+     *
+     * @return Найденные файлы.
+     */
+    public ArrayList<File> getEntryFiles() {
+        ArrayList<File> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsRecursively(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (fsObject.isFile()) fsObjects.add(fsObject.asFile());
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение директорий внутри директории, включая поиск в поддиректориях.
+     *
+     * @param filter Фильтр директорий
+     * @return Найденные директории.
+     */
+    public ArrayList<Directory> getEntryDirectories(Predicate<Directory> filter) {
+        ArrayList<Directory> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsRecursively(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (fsObject.isDirectory() && filter.test(fsObject.asDirectory())) fsObjects.add(fsObject.asDirectory());
+        }
+        return fsObjects;
+    }
+
+    /**
+     * Получение директорий внутри директории, включая поиск в поддиректориях.
+     *
+     * @return Найденные директории.
+     */
+    public ArrayList<Directory> getEntryDirectories() {
+        ArrayList<Directory> fsObjects = new ArrayList<>();
+        ArrayList<FSObject> allFsObjects = entryFSObjectsRecursively(this);
+        for (FSObject fsObject : allFsObjects) {
+            if (fsObject.isDirectory()) fsObjects.add(fsObject.asDirectory());
+        }
+        return fsObjects;
     }
 }

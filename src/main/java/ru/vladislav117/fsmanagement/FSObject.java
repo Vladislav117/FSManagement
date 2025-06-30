@@ -1,6 +1,7 @@
 package ru.vladislav117.fsmanagement;
 
 import ru.vladislav117.fsmanagement.directory.Directory;
+import ru.vladislav117.fsmanagement.file.File;
 
 /**
  * Объект файловой системы. Имеет своё расположение.
@@ -73,6 +74,72 @@ public abstract class FSObject {
      */
     public java.io.File getLocation() {
         return location;
+    }
+
+    /**
+     * Проверка, является ли этот объект директорией.
+     *
+     * @return Является ли этот объект директорией.
+     */
+    public boolean isDirectory() {
+        return location.isDirectory();
+    }
+
+    /**
+     * Приведение объекта к директории.
+     *
+     * @param directoryType    Тип директории
+     * @param <DirectoryClass> Класс директории
+     * @return Директория.
+     */
+    public <DirectoryClass extends Directory> DirectoryClass asDirectory(Class<DirectoryClass> directoryType) {
+        try {
+            return directoryType.getConstructor(FSObject.class).newInstance(this);
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    /**
+     * Приведение объекта к директории.
+     *
+     * @return Директория.
+     */
+    public Directory asDirectory() {
+        return new Directory(this);
+    }
+
+    /**
+     * Проверка, является ли этот объект файлом.
+     *
+     * @return Является ли этот объект файлом.
+     */
+    public boolean isFile() {
+        return location.isFile();
+    }
+
+    /**
+     * Приведение объекта к файлу.
+     *
+     * @return Файл.
+     */
+    public File asFile() {
+        return new File(this);
+    }
+
+    /**
+     * Приведение объекта к файлу.
+     *
+     * @param fileType    Тип файла
+     * @param <FileClass> Класс файла
+     * @return Файл.
+     */
+    public <FileClass extends File> FileClass asFile(Class<FileClass> fileType) {
+        try {
+            return fileType.getConstructor(FSObject.class).newInstance(this);
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     /**

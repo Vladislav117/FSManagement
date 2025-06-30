@@ -74,11 +74,7 @@ public class File extends FSObject {
      * @return Файл другого типа.
      */
     public <FileClass extends File> FileClass as(Class<FileClass> fileType) {
-        try {
-            return fileType.getConstructor(FSObject.class).newInstance(this);
-        } catch (Exception exception) {
-            throw new RuntimeException(exception);
-        }
+       return asFile(fileType);
     }
 
     /**
