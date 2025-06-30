@@ -37,7 +37,7 @@ public class Directory extends FSObject {
      * @param parentObject Родительский объект
      * @param childPath    Путь к дочернему объекту
      */
-    public Directory(File parentObject, String childPath) {
+    public Directory(java.io.File parentObject, String childPath) {
         super(parentObject, childPath);
     }
 
@@ -46,7 +46,7 @@ public class Directory extends FSObject {
      *
      * @param object Объект
      */
-    public Directory(File object) {
+    public Directory(java.io.File object) {
         super(object);
     }
 
@@ -154,13 +154,10 @@ public class Directory extends FSObject {
         java.io.File[] files = root.getLocation().listFiles();
         if (files == null) return new ArrayList<>();
         ArrayList<FSObject> directoryEntries = new ArrayList<>();
-        for (java.io.File file : files)
-            directoryEntries.add(new FSObject(file) {
-                @Override
-                public FSObject delete() {
-                    return this;
-                }
-            });
+        for (java.io.File file : files) {
+            if (file.isDirectory()) directoryEntries.add(new Directory(file));
+            if (file.isFile()) directoryEntries.add(new File(file));
+        }
         return directoryEntries;
     }
 
@@ -258,12 +255,9 @@ public class Directory extends FSObject {
         if (files == null) return new ArrayList<>();
         ArrayList<FSObject> fsObjects = new ArrayList<>();
         for (java.io.File file : files) {
-            FSObject fsObject = new FSObject(file) {
-                @Override
-                public FSObject delete() {
-                    return null;
-                }
-            };
+            FSObject fsObject = null;
+            if (file.isDirectory()) fsObject = new Directory(file);
+            if (file.isFile()) fsObject = new File(file);
             fsObjects.add(fsObject);
             if (fsObject.isDirectory()) fsObjects.addAll(entryFSObjectsRecursively(fsObject));
         }
