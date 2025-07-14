@@ -12,6 +12,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'commons-io:commons-io:2.14.0'
     implementation 'com.github.Vladislav117:FSManagement:0.1.1'
 }
 ```
