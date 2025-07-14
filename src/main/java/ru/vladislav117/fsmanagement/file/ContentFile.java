@@ -107,7 +107,7 @@ public abstract class ContentFile<Content> extends File {
      * @param defaultValue Значение по умолчанию
      * @return Прочитанная информация или значение по умолчанию.
      */
-    public @Nullable Content readOrDefault(Content defaultValue) {
+    public Content readOrDefault(Content defaultValue) {
         try {
             return read();
         } catch (Exception exception) {
