@@ -143,6 +143,7 @@ public abstract class ContentFile<Content> extends File {
      * @param content Контент, который будет записан
      * @return Этот же файл.
      */
+    @SuppressWarnings("UnusedReturnValue")
     public ContentFile<Content> writeIfNotExists(Content content) {
         if (!exists()) write(content);
         return this;
